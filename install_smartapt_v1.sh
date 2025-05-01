@@ -118,8 +118,19 @@ if [[ "$ACTION" == "install" ]]; then
     apt-mark showmanual | sort > "$BEFORE_MANUAL"
     apt-mark showauto | sort > "$BEFORE_AUTO"
 
+    msg "Simulating installation of $PKG..."
+    apt install --dry-run "$PKG"
+
+    echo
+    read -rp "Proceed with installation of $PKG? [y/N]: " CONFIRM
+    if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+        warn "Installation canceled."
+        exit 0
+    fi
+
     msg "Installing $PKG..."
     if apt install -y "$PKG"; then
+
         set +e
         apt-mark showmanual | sort > "$AFTER_MANUAL"
         apt-mark showauto | sort > "$AFTER_AUTO"
@@ -143,6 +154,7 @@ if [[ "$ACTION" == "install" ]]; then
             warn "No new packages tracked."
         fi
 
+        apt-mark manual "$PKG"
         success "Installed $PKG with tracking."
     else
         error "Failed to install $PKG"
